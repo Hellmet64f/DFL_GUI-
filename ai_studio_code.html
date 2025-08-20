@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Sandbox - Visualizador</title>
+    <!-- O CSS do painel será injetado aqui -->
+    <style id="injected-css"></style>
+    <!-- Estilo para o estado de espera -->
+    <style>
+        .waiting-message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: sans-serif;
+            color: #888;
+            background-color: #f0f0f0;
+            text-align: center;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <!-- O HTML do painel será injetado aqui. O corpo da página é completamente substituído. -->
+
+    <!-- SCRIPT DE CONTROLE (O único código fixo nesta página) -->
+    <script>
+        const storageKey = 'web_sandbox_source_code_v6';
+
+        function renderPage() {
+            const sourceCodeString = localStorage.getItem(storageKey);
+
+            // Limpa qualquer script injetado anteriormente
+            document.getElementById('dynamic-injected-script')?.remove();
+
+            if (!sourceCodeString) {
+                document.body.innerHTML = '<div class="waiting-message">Aguardando código do Painel Web Sandbox...</div>';
+                document.getElementById('injected-css').innerHTML = ''; // Limpa o CSS também
+                return;
+            }
+
+            try {
+                // Usa a API DOMParser para interpretar a string de código de forma segura
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(sourceCodeString, 'text/html');
+
+                // Extrai as partes
+                const cssCode = doc.querySelector('style')?.innerHTML || '';
+                const jsCode = doc.querySelector('script')?.innerHTML || '';
+                const bodyContent = doc.body.innerHTML;
+
+                // Injeta o CSS no <head>
+                document.getElementById('injected-css').innerHTML = cssCode;
+                // Substitui todo o <body> pelo conteúdo do painel
+                document.body.innerHTML = bodyContent;
+
+                // Cria e injeta o novo script para executá-lo
+                const newScript = document.createElement('script');
+                newScript.id = 'dynamic-injected-script';
+                newScript.textContent = jsCode;
+                document.body.appendChild(newScript);
+
+            } catch (error) {
+                // Se houver um erro de parsing, mostra no console
+                console.error("Erro ao renderizar o código do painel:", error);
+                document.body.innerHTML = `<div class="waiting-message">Erro no código!<br>Verifique o console (F12) para detalhes.</div>`;
+            }
+        }
+
+        // Renderiza a página quando ela carrega
+        document.addEventListener('DOMContentLoaded', renderPage);
+
+        // Ouve por mudanças no painel e renderiza a página novamente
+        window.addEventListener('storage', (event) => {
+            if (event.key === storageKey) {
+                renderPage();
+            }
+        });
+    </script>
+</body>
+</html>
