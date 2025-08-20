@@ -3,109 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Web Sandbox (Protegido)</title>
+    <title>Painel Web Sandbox (Online e Protegido)</title>
+    <!-- Adiciona os scripts do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        :root { --editor-bg: #282c34; --text-color: #abb2bf; --header-bg: #21252b; --accent-color: #61afef; --status-color: #98c379; --line-number-color: #4b5263; }
+        :root { --editor-bg: #282c34; --text-color: #abb2bf; --header-bg: #21252b; --accent-color: #61afef; --status-color: #98c379; }
         html, body { height: 100%; margin: 0; }
         body { font-family: "SF Mono", "Consolas", "Monaco", monospace; background-color: var(--header-bg); color: var(--text-color); }
-        /* Esconde o painel por padrão */
         #panel-wrapper { display: none; height: 100%; flex-direction: column; }
         #access-denied { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 1.5em; color: #e74c3c; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid var(--accent-color); flex-shrink: 0; }
         h1 { margin: 0; font-size: 1.2em; }
-        .controls button { background: var(--accent-color); color: #fff; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; margin-left: 10px; font-family: inherit; }
-        #save-status { color: var(--status-color); font-weight: bold; opacity: 0; transition: opacity 0.5s; margin-left: 20px; }
+        #save-status { color: var(--status-color); font-weight: bold; opacity: 0; transition: opacity 0.5s; }
         #save-status.visible { opacity: 1; }
-        .editor-wrapper { flex-grow: 1; display: flex; position: relative; }
-        .line-numbers { flex-shrink: 0; background-color: var(--header-bg); padding: 15px 10px; text-align: right; color: var(--line-number-color); user-select: none; font-size: 16px; line-height: 1.5; overflow: hidden; }
-        #code-editor { flex-grow: 1; background-color: var(--editor-bg); color: var(--text-color); border: none; font-size: 16px; line-height: 1.5; padding: 15px; resize: none; box-sizing: border-box; outline: none; }
+        textarea { flex-grow: 1; background-color: var(--editor-bg); color: var(--text-color); border: none; font-size: 16px; line-height: 1.5; padding: 15px; resize: none; box-sizing: border-box; outline: none; }
     </style>
 </head>
 <body>
-
-    <!-- Conteúdo do painel, escondido por padrão -->
     <div id="panel-wrapper">
         <div class="header">
-            <h1>Web Sandbox</h1>
-            <div class="controls">
-                <button id="reset-button">Resetar Exemplo</button>
-                <button id="clear-button">Limpar Tudo</button>
-                <span id="save-status">Salvo!</span>
-            </div>
+            <h1>Painel de Controle Online</h1>
+            <div id="save-status">Salvo na Nuvem!</div>
         </div>
-        <div class="editor-wrapper">
-            <div class="line-numbers">1</div>
-            <textarea id="code-editor" spellcheck="false"></textarea>
-        </div>
+        <textarea id="code-editor" spellcheck="false" placeholder="Carregando código da nuvem..."></textarea>
     </div>
-    
-    <!-- Mensagem de acesso negado -->
     <div id="access-denied" style="display: none;">Acesso Negado.</div>
 
     <script>
         // =================== SCRIPT DE AUTENTICAÇÃO ===================
-        const correctPassword = "Miguel legal12323kso"; // <-- SUA SENHA ESTÁ AQUI!
-        
-        const enteredPassword = prompt("Por favor, digite a senha de acesso ao painel:");
+        const correctPassword = "Miguel legal12323kso"; // Sua senha
+        const enteredPassword = prompt("Acesso restrito. Digite a senha:");
 
         if (enteredPassword === correctPassword) {
-            // Se a senha estiver correta, mostra o painel
             document.getElementById('panel-wrapper').style.display = 'flex';
         } else {
-            // Se estiver errada, mostra a mensagem de acesso negado
             document.getElementById('access-denied').style.display = 'flex';
         }
         // =============================================================
 
-
-        // O restante do código do painel só é executado se a senha uestiver correta
+        // O código do Firebase só roda se a senha estiver correta
         if (enteredPassword === correctPassword) {
-            const storageKey = 'web_sandbox_source_code_v6';
+            
+            // ===== COLE SUAS CREDENCIAIS DO FIREBASE AQUI =====
+            const firebaseConfig = {
+                apiKey: "COLE_SUA_API_KEY",
+                authDomain: "COLE_SEU_AUTH_DOMAIN",
+                databaseURL: "COLE_SUA_DATABASE_URL",
+                projectId: "COLE_SEU_PROJECT_ID",
+                storageBucket: "COLE_SEU_STORAGE_BUCKET",
+                messagingSenderId: "COLE_SEU_MESSAGING_SENDER_ID",
+                appId: "COLE_SEU_APP_ID"
+            };
+            // =======================================================
+
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+            const sourceCodeRef = database.ref('live-code/source');
+
             const codeEditor = document.getElementById('code-editor');
-            const lineNumbers = document.querySelector('.line-numbers');
             const saveStatus = document.getElementById('save-status');
-            const resetButton = document.getElementById('reset-button');
-            const clearButton = document.getElementById('clear-button');
 
-            const defaultCode = `<!-- Bem-vindo ao Web Sandbox! -->
-<div class="card"><h1>Site Padrão</h1><p>Edite este conteúdo no painel.</p></div>
-<style>body { font-family: sans-serif; text-align: center; padding-top: 50px; }</style>
-<script><\/script>`;
-
-            function updateLineNumbers() {
-                const lineCount = codeEditor.value.split('\\n').length;
-                lineNumbers.innerHTML = Array.from({ length: lineCount }, (_, i) => i + 1).join('<br>');
-            }
             function saveData() {
-                localStorage.setItem(storageKey, codeEditor.value);
-                saveStatus.classList.add('visible');
-                setTimeout(() => saveStatus.classList.remove('visible'), 1500);
+                sourceCodeRef.set(codeEditor.value)
+                    .then(() => {
+                        saveStatus.classList.add('visible');
+                        setTimeout(() => saveStatus.classList.remove('visible'), 1500);
+                    })
+                    .catch(error => { console.error("Erro ao salvar:", error); });
             }
+
             document.addEventListener('DOMContentLoaded', () => {
-                const savedData = localStorage.getItem(storageKey);
-                codeEditor.value = savedData || defaultCode;
-                updateLineNumbers();
+                sourceCodeRef.once('value', (snapshot) => {
+                    const code = snapshot.val();
+                    if (code) {
+                        codeEditor.value = code;
+                    } else {
+                        codeEditor.placeholder = "O banco de dados está vazio. Comece a digitar...";
+                    }
+                });
             });
+
             let debounceTimeout;
             codeEditor.addEventListener('input', () => {
-                updateLineNumbers();
                 clearTimeout(debounceTimeout);
-                debounceTimeout = setTimeout(saveData, 300);
-            });
-            codeEditor.addEventListener('scroll', () => {
-                lineNumbers.scrollTop = codeEditor.scrollTop;
-            });
-            resetButton.addEventListener('click', () => {
-                if (confirm('Tem certeza?')) {
-                    codeEditor.value = defaultCode;
-                    updateLineNumbers(); saveData();
-                }
-            });
-            clearButton.addEventListener('click', () => {
-                if (confirm('Tem certeza?')) {
-                    codeEditor.value = '';
-                    updateLineNumbers(); saveData();
-                }
+                debounceTimeout = setTimeout(saveData, 500);
             });
         }
     </script>
