@@ -2,64 +2,18 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
-    <title>Site Sincronizado em Tempo Real</title>
-    <!-- Adiciona os scripts do Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <style id="injected-css"></style>
-    <style> .waiting-message { display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; color: #888; background-color: #f0f0f0; } </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Site</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+    </style>
 </head>
 <body>
-    <!-- O HTML do painel será injetado aqui -->
+    <h1>Site Inicial</h1>
+    <p>Use o painel para gerar um novo código para esta página.</p>
 
     <script>
-        // ===== COLE AS MESMAS CREDENCIAIS DO FIREBASE AQUI =====
-        const firebaseConfig = {
-            apiKey: "COLE_SUA_API_KEY",
-            authDomain: "COLE_SEU_AUTH_DOMAIN",
-            databaseURL: "COLE_SUA_DATABASE_URL",
-            projectId: "COLE_SEU_PROJECT_ID",
-            storageBucket: "COLE_SEU_STORAGE_BUCKET",
-            messagingSenderId: "COLE_SEU_MESSAGING_SENDER_ID",
-            appId: "COLE_SEU_APP_ID"
-        };
-        // ===========================================================
-
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const sourceCodeRef = database.ref('live-code/source');
-
-        function renderPage(sourceCodeString) {
-            document.getElementById('dynamic-injected-script')?.remove();
-            if (!sourceCodeString) {
-                document.body.innerHTML = '<div class="waiting-message">Aguardando conteúdo do painel...</div>';
-                document.getElementById('injected-css').innerHTML = '';
-                return;
-            }
-            try {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(sourceCodeString, 'text/html');
-                const cssCode = doc.querySelector('style')?.innerHTML || '';
-                const jsCode = doc.querySelector('script')?.innerHTML || '';
-                const bodyContent = doc.body.innerHTML;
-                document.getElementById('injected-css').innerHTML = cssCode;
-                document.body.innerHTML = bodyContent;
-                const newScript = document.createElement('script');
-                newScript.id = 'dynamic-injected-script';
-                newScript.textContent = jsCode;
-                document.body.appendChild(newScript);
-            } catch (error) {
-                console.error("Erro ao renderizar:", error);
-            }
-        }
-
-        // A mágica do tempo real: ouve por qualquer mudança no banco de dados
-        sourceCodeRef.on('value', (snapshot) => {
-            const code = snapshot.val();
-            console.log("Atualização recebida da nuvem!");
-            renderPage(code);
-        });
+        console.log("Versão 1.0 do site carregada.");
     </script>
 </body>
 </html>
